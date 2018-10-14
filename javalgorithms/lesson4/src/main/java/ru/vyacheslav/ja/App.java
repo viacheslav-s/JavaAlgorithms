@@ -5,19 +5,19 @@ public class App
     public static void main(String[] args) {
         DoublyRelatedList drl = new DoublyRelatedList();
         System.out.println(drl);
-        System.out.println("First inserting:");
-        drl.insertFirst(new Cat(2, "cat-1"));
-        drl.insertFirst(new Cat(2, "cat-2"));
-        drl.insertFirst(new Cat(2, "cat-3"));
-        drl.insertFirst(new Cat(2, "cat-4"));
+        drl.push(new Cat(1, "cat-1"));
+        drl.push(new Cat(2, "cat-2"));
+        drl.push(new Cat(3, "cat-3"));
         System.out.println(drl);
-
-        System.out.println("Last inserting:");
-        drl.insertLast(new Cat(2, "cat-1"));
-        drl.insertLast(new Cat(2, "cat-2"));
-        drl.insertLast(new Cat(2, "cat-3"));
-        drl.insertLast(new Cat(2, "cat-4"));
+        drl.pop();
         System.out.println(drl);
-
+        drl.pop();
+        System.out.println(drl);
+        drl.deleteCurrent();
+        System.out.println(drl);
+        drl.push(new Cat(5, "cat-5"));
+        System.out.println(drl);
+        drl.delete(new Cat(5, "cat-5"));
+        System.out.println(drl);
     }
 }

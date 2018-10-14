@@ -1,32 +1,135 @@
 package ru.vyacheslav.ja;
 
-public class DoublyRelatedList {
-    private class Node {
-        Cat c;
-        Node next;
-        Node prev;
-        public Node(Cat c) {
+import java.util.Objects;
+
+public class DoublyRelatedList<T> implements LinkIteratorApp<T> {
+    @Override
+    public void reset() {
+        iterator = head;
+    }
+
+    @Override
+    public boolean atEnd() {
+        if (!listExists()) throw new RuntimeException("iterator is null");
+        return iterator.next == null;
+    }
+
+    @Override
+    public boolean atBegin() {
+        if (!listExists()) throw new RuntimeException("iterator is null");
+        return iterator.prev == null;
+    }
+
+    private boolean listExists() {
+        return iterator != null;
+    }
+
+    @Override
+    public T deleteCurrent() {
+        if (!listExists()) throw new RuntimeException("iterator is null");
+        T temp = iterator.c;
+        if (atBegin() && atEnd()) {
+            head = null;
+            tail = null;
+            reset();
+        } else if (atBegin()) {
+            head = iterator.next;
+            head.prev = null;
+            reset();
+        } else if (atEnd()) {
+            tail = iterator.prev;
+            tail.next = null;
+            iterator = iterator.next;
+        } else {
+            iterator.prev.next = iterator.next;
+            iterator.next.prev = iterator.prev;
+        }
+        return temp;
+
+    }
+
+    @Override
+    public void insertLast(T c) {
+        if (!listExists()) throw new RuntimeException("iterator is null");
+        Node<T> temp = new Node<>(c);
+        if (!atEnd()) {
+            temp.next = iterator.next;
+            iterator.next.prev = temp;
+        } else {
+            tail = temp;
+        }
+        iterator.next = temp;
+        temp.prev = iterator;
+    }
+
+    @Override
+    public void insertFirst(T c) {
+        if (!listExists()) throw new RuntimeException("iterator is null");
+        Node<T> temp = new Node<>(c);
+        if (!atBegin()) {
+            temp.prev = iterator.prev;
+            iterator.prev.next = temp;
+        } else {
+            head = temp;
+        }
+        iterator.prev = temp;
+        temp.next = iterator;
+    }
+
+    @Override
+    public T getCurrent() {
+        if (!listExists()) throw new RuntimeException("iterator is null");
+        return iterator.c;
+    }
+
+    @Override
+    public boolean hasNext() {
+        if (!listExists()) throw new RuntimeException("iterator is null");
+        return iterator.next != null;
+    }
+
+    @Override
+    public T next() {
+        if (!listExists()) throw new RuntimeException("iterator is null");
+        iterator = iterator.next;
+        return iterator.prev.c;
+    }
+
+    private class Node<T> {
+        T c;
+        Node<T> next;
+        Node<T> prev;
+        public Node(T c) {
             this.c = c;
         }
+
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (!(o instanceof Node)) return false;
-            Node node = (Node) o;
-            return c.equals(node.c);
+            Node<?> node = (Node<?>) o;
+            return Objects.equals(c, node.c);
         }
+
         @Override
-        public String toString() {
+        public int hashCode() {
+
+            return Objects.hash(c);
+        }
+
+        @Override public String toString() {
             return c.toString();
         }
     }
 
-    private Node head;
-    private Node tail;
+    private Node<T> head;
+    private Node<T> tail;
+    private Node<T> iterator;
 
     public DoublyRelatedList() {
         head = null;
         tail = null;
+        iterator = null;
     }
 
     public boolean isEmpty() {
@@ -36,46 +139,37 @@ public class DoublyRelatedList {
         return false;
     }
 
-    public void insertFirst(Cat c) {
-        Node n = new Node(c);
-        if (isEmpty()) {
+    public void push(Cat c) {
+        Node n = new Node<>(c);
+        n.next = head; // if (head == null) n.next = null;
+        if (head == null) {
             tail = n;
         } else {
-            n.prev = head;
+            head.prev = n;
         }
-        n.next = head;
+        reset();
         head = n;
     }
 
-    public void insertLast(Cat c) {
-        Node n = new Node(c);
-        if (isEmpty()) {
-            head = n;
+    public T pop() {
+        if (isEmpty()) return null;
+        T c = tail.c;
+        if (tail.prev != null) {
+            tail.prev.next = null;
+            tail = tail.prev;
+            iterator = head;
         } else {
-            tail.next = n;
+            tail = null;
+            head = null;
+            iterator = null;
         }
-        n.prev = tail;
-        tail = n;
-    }
-
-    public Cat removeFirst() {
-        if (isEmpty())
-            return null;
-        Cat c = head.c;
-        head = head.next;
-        return c;
-    }
-
-    public Cat removeLast() {
-        if (isEmpty())
-            return null;
-        Cat c = tail.c;
-        tail = tail.next;
+        reset();
         return c;
     }
 
     @Override
     public String toString() {
+        if (isEmpty()) return "[]";
         Node current = head;
         StringBuilder sb = new StringBuilder("[ ");
         while (current != null) {
@@ -86,36 +180,43 @@ public class DoublyRelatedList {
         return sb.toString();
     }
 
-    public boolean contains(Cat c) {
-        if (isEmpty())
-            return false;
-        Node current = head;
-        while (!current.c.equals(c)) {
-            if (current.next == null)
-                return false;
-            else
-                current = current.next;
+    public boolean contains(T c) {
+        Node<T> n = new Node<>(c);
+        Node<T> current = head;
+        while (!current.equals(n)) {
+            if (current.next == null) return false;
+            else current = current.next;
         }
         return true;
     }
 
-    public boolean delete(Cat c) {
-        Node n = new Node(c);
-        Node current = head;
-        Node previous = head;
+    public T delete(T c) {
+        Node<T> n = new Node<>(c);
+        Node<T> current = head;
+        Node<T> previous = head;
+
         while (!current.equals(n)) {
-            if (current.next == null)
-                return false;
+            if (current.next == null) return null;
             else {
                 previous = current;
                 current = current.next;
             }
         }
-        if (current == head) {
+        if (current == head && current == tail) {
+            head = null;
+            tail = null;
+            iterator = null;
+        } else if (current == head) {
             head = head.next;
+            head.next.prev = null;
+        } else if (current == tail) {
+            tail = tail.prev;
+            tail.prev.next = null;
         } else {
             previous.next = current.next;
+            current.next.prev = previous;
         }
-        return true;
+
+        return current.c;
     }
 }
